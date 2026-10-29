@@ -78,5 +78,17 @@ const r2 = Core.recommend(pool, "能坐 100 个人");
 ok(r2 && r2.room.seats >= 100, "要 100 人时挑到 " + (r2 && r2.room.seats) + " 座");
 ok(Core.recommend([], "随便") === null, "没有空教室时返回 null");
 
+console.log("[9] 全天时间轴");
+const sched = Core.daySchedule("A201", stamp);
+ok(sched.length === Core.PERIODS.length, "一天有 " + sched.length + " 格");
+ok(sched.every((v) => typeof v === "boolean"), "每格都是布尔值");
+const manual = Core.PERIODS.map((_, i) => !Core.isOccupied("A201", stamp, i));
+ok(JSON.stringify(sched) === JSON.stringify(manual), "与 isOccupied 的结论一致");
+const mixed = Core.ROOMS.filter((r) => {
+  const s = Core.daySchedule(r.id, stamp);
+  return s.includes(true) && s.includes(false);
+}).length;
+ok(mixed > 0, "存在「有课也有空」的教室（" + mixed + " 间），时间轴不会全绿或全灰");
+
 console.log(fail === 0 ? "\n全部通过" : "\n有 " + fail + " 项失败");
 process.exit(fail === 0 ? 0 : 1);

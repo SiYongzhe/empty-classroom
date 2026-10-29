@@ -98,6 +98,11 @@
     return n;
   }
 
+  /** 某间教室一整天每一节是否空闲：true = 空，false = 有课 */
+  function daySchedule(roomId, dayStamp) {
+    return PERIODS.map((_, i) => !isOccupied(roomId, dayStamp, i));
+  }
+
   /** 当前时间落在第几节；不在任何节次内返回 -1 */
   function periodAt(now) {
     const mins = now.getHours() * 60 + now.getMinutes();
@@ -215,6 +220,7 @@
     ROOMS,
     isOccupied,
     consecutiveFree,
+    daySchedule,
     periodAt,
     defaultSlot,
     freeRooms,

@@ -14,6 +14,7 @@ const state = {
   query: "",           // 搜索词
   onlyFav: false,      // 只看收藏
   favs: loadFavs(),
+  detailId: null,      // 当前打开的教室详情
 };
 
 let config = loadConfig();
@@ -45,10 +46,14 @@ function loadConfig() {
 }
 
 /** 把"今天+偏移"算成一个整数，用作模拟排课的种子 */
-function dayStamp() {
+function dayStampFor(offset) {
   const d = new Date();
-  d.setDate(d.getDate() + state.dayOffset);
+  d.setDate(d.getDate() + offset);
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+function dayStamp() {
+  return dayStampFor(state.dayOffset);
 }
 
 /* ---------- 2.5 地址栏状态 ----------
@@ -109,6 +114,15 @@ const els = {
   cfgKey: $("cfgKey"),
   settingsSave: $("settingsSave"),
   settingsCancel: $("settingsCancel"),
+  // 教室详情
+  detailModal: $("detailModal"),
+  detailTitle: $("detailTitle"),
+  detailMeta: $("detailMeta"),
+  detailTags: $("detailTags"),
+  detailToday: $("detailToday"),
+  detailTomorrow: $("detailTomorrow"),
+  detailClose: $("detailClose"),
+  detailFav: $("detailFav"),
 };
 
 /* ---------- 3. 渲染：控制区 ---------- */
@@ -227,6 +241,18 @@ function renderRooms() {
     foot.className = "room-foot";
     foot.textContent = room.free > 1 ? `接下来 ${room.free} 节都空` : "只有这一节空";
 
+    // 整张卡片可点：打开这间教室的全天时间轴
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `${room.id}，${room.seats} 座，查看全天安排`);
+    card.addEventListener("click", () => openDetail(room.id));
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openDetail(room.id);
+      }
+    });
+
     card.append(star, id, meta, tags, foot);
     els.grid.appendChild(card);
   });
@@ -243,6 +269,66 @@ function toggleFav(id) {
   }
   saveFavs();
   renderRooms();
+
+  // 详情页开着的话，同步按钮状态
+  if (!els.detailModal.hidden) {
+    els.detailFav.textContent = state.favs.includes(id) ? "★ 已收藏" : "☆ 收藏";
+  }
+}
+
+/* ---------- 4.5 教室详情：全天时间轴 ---------- */
+
+function openDetail(roomId) {
+  const room = Core.ROOMS.find((r) => r.id === roomId);
+  if (!room) return;
+
+  els.detailTitle.textContent = room.id;
+  els.detailMeta.textContent =
+    `${Core.buildingOf(room.b).name} · ${room.floor} 层 · ${room.seats} 座`;
+
+  els.detailTags.innerHTML = "";
+  room.tags.forEach((t) => {
+    const el = document.createElement("span");
+    el.className = "tag";
+    el.textContent = t;
+    els.detailTags.appendChild(el);
+  });
+
+  renderTimeline(els.detailToday, roomId, 0);
+  renderTimeline(els.detailTomorrow, roomId, 1);
+
+  els.detailFav.textContent = state.favs.includes(roomId) ? "★ 已收藏" : "☆ 收藏";
+  state.detailId = roomId;
+  els.detailModal.hidden = false;
+  els.detailClose.focus();
+}
+
+/** 把某间教室某一天的 5 个节次画成一排色块 */
+function renderTimeline(container, roomId, offset) {
+  const schedule = Core.daySchedule(roomId, dayStampFor(offset));
+  container.innerHTML = "";
+
+  Core.PERIODS.forEach((p, i) => {
+    const cell = document.createElement("div");
+    cell.className = "slot " + (schedule[i] ? "free" : "busy");
+
+    const name = document.createElement("b");
+    name.textContent = p.label.replace("第 ", "").replace(" 节", "");
+
+    const time = document.createElement("span");
+    time.textContent = p.start;
+
+    const stateText = document.createElement("em");
+    stateText.textContent = schedule[i] ? "空" : "有课";
+
+    cell.append(name, time, stateText);
+    cell.title = `${p.label} ${p.start}–${p.end}：${schedule[i] ? "空闲" : "有课"}`;
+    container.appendChild(cell);
+  });
+}
+
+function closeDetail() {
+  els.detailModal.hidden = true;
 }
 
 /* ---------- 5. 时钟与默认时段 ---------- */
@@ -407,6 +493,17 @@ els.favToggle.addEventListener("click", () => {
 
 els.aiBtn.addEventListener("click", askAI);
 
+/* 教室详情 */
+els.detailClose.addEventListener("click", closeDetail);
+
+els.detailFav.addEventListener("click", () => {
+  if (state.detailId) toggleFav(state.detailId);
+});
+
+els.detailModal.addEventListener("click", (e) => {
+  if (e.target === els.detailModal) closeDetail();
+});
+
 els.need.addEventListener("keydown", (e) => {
   if (e.key === "Enter") askAI();
 });
@@ -438,7 +535,12 @@ els.modal.addEventListener("click", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !els.modal.hidden) els.modal.hidden = true;
+  if (e.key !== "Escape") return;
+  if (!els.detailModal.hidden) {
+    closeDetail();
+  } else if (!els.modal.hidden) {
+    els.modal.hidden = true;
+  }
 });
 
 /* ---------- 8. 启动 ---------- */

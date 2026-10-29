@@ -66,7 +66,32 @@
 
   <footer class="foot">
     数据为模拟数据，用于演示；真实排课需要教务接口权限。
+    <span class="ver">v2.0 · 2026-10-29</span>
   </footer>
+
+  <!-- 教室详情：点卡片打开，看这间今天全天什么时候空 -->
+  <div id="detailModal" class="modal" hidden>
+    <div class="modal-box detail-box" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+      <div class="detail-head">
+        <h3 id="detailTitle">教室</h3>
+        <button id="detailClose" class="ghost small" type="button">关闭</button>
+      </div>
+
+      <div id="detailMeta" class="detail-meta"></div>
+      <div id="detailTags" class="tags"></div>
+
+      <h4 class="detail-sub">今天</h4>
+      <div id="detailToday" class="timeline"></div>
+
+      <h4 class="detail-sub">明天</h4>
+      <div id="detailTomorrow" class="timeline"></div>
+
+      <div class="detail-foot">
+        <button id="detailFav" class="ghost" type="button">☆ 收藏</button>
+        <span class="detail-hint">绿色=空着，灰色=有课</span>
+      </div>
+    </div>
+  </div>
 
   <!-- AI 设置弹层 -->
   <div id="settingsModal" class="modal" hidden>

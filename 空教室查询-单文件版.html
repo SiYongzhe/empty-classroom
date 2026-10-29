@@ -422,6 +422,69 @@ button.small { padding: 6px 12px; font-size: 12.5px; }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
+/* ---------- 教室详情 ---------- */
+.detail-box { max-width: 520px; max-height: 88vh; overflow-y: auto; }
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.detail-head h3 { margin: 0; font-size: 19px; letter-spacing: 0.3px; }
+
+.detail-meta { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+
+.detail-sub {
+  margin: 18px 0 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.slot {
+  padding: 8px 5px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7f8fc;
+}
+
+.slot b { display: block; font-size: 13px; }
+.slot span { display: block; font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+.slot em { display: block; font-style: normal; font-size: 11px; font-weight: 600; margin-top: 4px; }
+
+.slot.free { background: #ecfdf3; border-color: #bbf7d0; }
+.slot.free em { color: var(--ok); }
+
+.slot.busy em { color: #9aa0ae; }
+
+.detail-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.detail-hint { font-size: 11.5px; color: var(--muted); }
+
+.ver { display: block; margin-top: 4px; font-size: 11px; opacity: 0.65; }
+
+/* 键盘操作时卡片要有可见焦点 */
+.room:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 /* ---------- 稳健性 ---------- */
 /* 长教室名不撑破卡片 */
 .room-id, .room-meta, .tag, .room-foot, .empty { overflow-wrap: anywhere; }
@@ -515,7 +578,32 @@ button.small { padding: 6px 12px; font-size: 12.5px; }
 
   <footer class="foot">
     数据为模拟数据，用于演示；真实排课需要教务接口权限。
+    <span class="ver">v2.0 · 2026-10-29</span>
   </footer>
+
+  <!-- 教室详情：点卡片打开，看这间今天全天什么时候空 -->
+  <div id="detailModal" class="modal" hidden>
+    <div class="modal-box detail-box" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+      <div class="detail-head">
+        <h3 id="detailTitle">教室</h3>
+        <button id="detailClose" class="ghost small" type="button">关闭</button>
+      </div>
+
+      <div id="detailMeta" class="detail-meta"></div>
+      <div id="detailTags" class="tags"></div>
+
+      <h4 class="detail-sub">今天</h4>
+      <div id="detailToday" class="timeline"></div>
+
+      <h4 class="detail-sub">明天</h4>
+      <div id="detailTomorrow" class="timeline"></div>
+
+      <div class="detail-foot">
+        <button id="detailFav" class="ghost" type="button">☆ 收藏</button>
+        <span class="detail-hint">绿色=空着，灰色=有课</span>
+      </div>
+    </div>
+  </div>
 
   <!-- AI 设置弹层 -->
   <div id="settingsModal" class="modal" hidden>
@@ -649,6 +737,11 @@ button.small { padding: 6px 12px; font-size: 12.5px; }
     return n;
   }
 
+  /** 某间教室一整天每一节是否空闲：true = 空，false = 有课 */
+  function daySchedule(roomId, dayStamp) {
+    return PERIODS.map((_, i) => !isOccupied(roomId, dayStamp, i));
+  }
+
   /** 当前时间落在第几节；不在任何节次内返回 -1 */
   function periodAt(now) {
     const mins = now.getHours() * 60 + now.getMinutes();
@@ -766,6 +859,7 @@ button.small { padding: 6px 12px; font-size: 12.5px; }
     ROOMS,
     isOccupied,
     consecutiveFree,
+    daySchedule,
     periodAt,
     defaultSlot,
     freeRooms,
@@ -793,6 +887,7 @@ const state = {
   query: "",           // 搜索词
   onlyFav: false,      // 只看收藏
   favs: loadFavs(),
+  detailId: null,      // 当前打开的教室详情
 };
 
 let config = loadConfig();
@@ -824,10 +919,14 @@ function loadConfig() {
 }
 
 /** 把"今天+偏移"算成一个整数，用作模拟排课的种子 */
-function dayStamp() {
+function dayStampFor(offset) {
   const d = new Date();
-  d.setDate(d.getDate() + state.dayOffset);
+  d.setDate(d.getDate() + offset);
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+function dayStamp() {
+  return dayStampFor(state.dayOffset);
 }
 
 /* ---------- 2.5 地址栏状态 ----------
@@ -888,6 +987,15 @@ const els = {
   cfgKey: $("cfgKey"),
   settingsSave: $("settingsSave"),
   settingsCancel: $("settingsCancel"),
+  // 教室详情
+  detailModal: $("detailModal"),
+  detailTitle: $("detailTitle"),
+  detailMeta: $("detailMeta"),
+  detailTags: $("detailTags"),
+  detailToday: $("detailToday"),
+  detailTomorrow: $("detailTomorrow"),
+  detailClose: $("detailClose"),
+  detailFav: $("detailFav"),
 };
 
 /* ---------- 3. 渲染：控制区 ---------- */
@@ -1006,6 +1114,18 @@ function renderRooms() {
     foot.className = "room-foot";
     foot.textContent = room.free > 1 ? `接下来 ${room.free} 节都空` : "只有这一节空";
 
+    // 整张卡片可点：打开这间教室的全天时间轴
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `${room.id}，${room.seats} 座，查看全天安排`);
+    card.addEventListener("click", () => openDetail(room.id));
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openDetail(room.id);
+      }
+    });
+
     card.append(star, id, meta, tags, foot);
     els.grid.appendChild(card);
   });
@@ -1022,6 +1142,66 @@ function toggleFav(id) {
   }
   saveFavs();
   renderRooms();
+
+  // 详情页开着的话，同步按钮状态
+  if (!els.detailModal.hidden) {
+    els.detailFav.textContent = state.favs.includes(id) ? "★ 已收藏" : "☆ 收藏";
+  }
+}
+
+/* ---------- 4.5 教室详情：全天时间轴 ---------- */
+
+function openDetail(roomId) {
+  const room = Core.ROOMS.find((r) => r.id === roomId);
+  if (!room) return;
+
+  els.detailTitle.textContent = room.id;
+  els.detailMeta.textContent =
+    `${Core.buildingOf(room.b).name} · ${room.floor} 层 · ${room.seats} 座`;
+
+  els.detailTags.innerHTML = "";
+  room.tags.forEach((t) => {
+    const el = document.createElement("span");
+    el.className = "tag";
+    el.textContent = t;
+    els.detailTags.appendChild(el);
+  });
+
+  renderTimeline(els.detailToday, roomId, 0);
+  renderTimeline(els.detailTomorrow, roomId, 1);
+
+  els.detailFav.textContent = state.favs.includes(roomId) ? "★ 已收藏" : "☆ 收藏";
+  state.detailId = roomId;
+  els.detailModal.hidden = false;
+  els.detailClose.focus();
+}
+
+/** 把某间教室某一天的 5 个节次画成一排色块 */
+function renderTimeline(container, roomId, offset) {
+  const schedule = Core.daySchedule(roomId, dayStampFor(offset));
+  container.innerHTML = "";
+
+  Core.PERIODS.forEach((p, i) => {
+    const cell = document.createElement("div");
+    cell.className = "slot " + (schedule[i] ? "free" : "busy");
+
+    const name = document.createElement("b");
+    name.textContent = p.label.replace("第 ", "").replace(" 节", "");
+
+    const time = document.createElement("span");
+    time.textContent = p.start;
+
+    const stateText = document.createElement("em");
+    stateText.textContent = schedule[i] ? "空" : "有课";
+
+    cell.append(name, time, stateText);
+    cell.title = `${p.label} ${p.start}–${p.end}：${schedule[i] ? "空闲" : "有课"}`;
+    container.appendChild(cell);
+  });
+}
+
+function closeDetail() {
+  els.detailModal.hidden = true;
 }
 
 /* ---------- 5. 时钟与默认时段 ---------- */
@@ -1186,6 +1366,17 @@ els.favToggle.addEventListener("click", () => {
 
 els.aiBtn.addEventListener("click", askAI);
 
+/* 教室详情 */
+els.detailClose.addEventListener("click", closeDetail);
+
+els.detailFav.addEventListener("click", () => {
+  if (state.detailId) toggleFav(state.detailId);
+});
+
+els.detailModal.addEventListener("click", (e) => {
+  if (e.target === els.detailModal) closeDetail();
+});
+
 els.need.addEventListener("keydown", (e) => {
   if (e.key === "Enter") askAI();
 });
@@ -1217,7 +1408,12 @@ els.modal.addEventListener("click", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !els.modal.hidden) els.modal.hidden = true;
+  if (e.key !== "Escape") return;
+  if (!els.detailModal.hidden) {
+    closeDetail();
+  } else if (!els.modal.hidden) {
+    els.modal.hidden = true;
+  }
 });
 
 /* ---------- 8. 启动 ---------- */

@@ -412,6 +412,69 @@ button.small { padding: 6px 12px; font-size: 12.5px; }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
+/* ---------- 教室详情 ---------- */
+.detail-box { max-width: 520px; max-height: 88vh; overflow-y: auto; }
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.detail-head h3 { margin: 0; font-size: 19px; letter-spacing: 0.3px; }
+
+.detail-meta { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+
+.detail-sub {
+  margin: 18px 0 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.slot {
+  padding: 8px 5px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7f8fc;
+}
+
+.slot b { display: block; font-size: 13px; }
+.slot span { display: block; font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+.slot em { display: block; font-style: normal; font-size: 11px; font-weight: 600; margin-top: 4px; }
+
+.slot.free { background: #ecfdf3; border-color: #bbf7d0; }
+.slot.free em { color: var(--ok); }
+
+.slot.busy em { color: #9aa0ae; }
+
+.detail-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.detail-hint { font-size: 11.5px; color: var(--muted); }
+
+.ver { display: block; margin-top: 4px; font-size: 11px; opacity: 0.65; }
+
+/* 键盘操作时卡片要有可见焦点 */
+.room:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 /* ---------- 稳健性 ---------- */
 /* 长教室名不撑破卡片 */
 .room-id, .room-meta, .tag, .room-foot, .empty { overflow-wrap: anywhere; }
