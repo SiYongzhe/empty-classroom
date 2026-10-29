@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<!-- 本文件由 build_single.py 自动生成，请勿直接编辑；改源文件后重新运行脚本 -->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>空教室查询 · Axiom 黑客松 2026</title>
+  <meta name="description" content="选时间和楼栋，看哪间教室现在空着、能连空几节。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234f46e5'/%3E%3Ccircle cx='32' cy='24' r='6' fill='white'/%3E%3Cpath d='M18 44h28' stroke='white' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <style>
+/* ============================================
+   空教室查询 — 样式
+   改配色只需要改 :root 里的几个变量
+   ============================================ */
+:root {
+  --bg: #0f1226;
+  --card: #ffffff;
+  --ink: #14172b;
+  --muted: #6b7280;
+  --line: #e5e7ef;
+  --brand: #4f46e5;
+  --brand-2: #7c3aed;
+  --ok: #15803d;
+  --ok-soft: #ecfdf3;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(15, 18, 38, 0.12);
+  --font: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  font-family: var(--font);
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #2b2f6b 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, #4c1d95 0%, transparent 55%),
+    var(--bg);
+  padding: 24px 16px 48px;
+}
+
+/* ---------- 顶栏 ---------- */
+.topbar {
+  max-width: 900px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #fff;
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+
+.logo {
+  width: 42px; height: 42px;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  font-weight: 800; font-size: 19px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.45);
+}
+
+.brand h1 { margin: 0; font-size: 19px; letter-spacing: 0.2px; }
+.brand .sub { margin: 2px 0 0; font-size: 12px; color: rgba(255,255,255,0.66); }
+
+/* ---------- 通用 ---------- */
+main { max-width: 900px; margin: 0 auto; display: grid; gap: 14px; }
+
+.panel {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.panel h2 { margin: 0 0 6px; font-size: 16px; }
+
+.hint { margin: 0 0 14px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-row.wrap { flex-wrap: wrap; justify-content: flex-start; }
+
+.tip { font-size: 12px; color: var(--muted); }
+
+/* ---------- 今天 / 明天 ---------- */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 11px;
+  background: #f3f4fa;
+  border: 1px solid var(--line);
+}
+
+.seg-btn {
+  padding: 7px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.seg-btn.is-on {
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.3);
+}
+
+/* ---------- 节次 ---------- */
+.periods {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.periods::-webkit-scrollbar { display: none; }
+
+.period {
+  flex: none;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.period b { display: block; font-size: 13px; }
+.period span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.period:hover { border-color: #c7c9dd; }
+
+.period.is-on {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+}
+
+.period.is-on span { color: rgba(255,255,255,0.8); }
+
+/* ---------- 楼栋筛选 ---------- */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.chip {
+  padding: 7px 13px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.chip:hover { border-color: #c7c9dd; }
+
+.chip.is-on {
+  color: var(--brand);
+  background: #eef0ff;
+  border-color: #c7c9f5;
+  font-weight: 600;
+}
+
+.search {
+  flex: 1;
+  min-width: 160px;
+  padding: 9px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  outline: none;
+}
+
+.search:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+
+/* ---------- 统计条 ---------- */
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+}
+
+button.ghost {
+  padding: 7px 13px;
+  font-size: 13px;
+  font-family: inherit;
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+button.ghost:hover { background: rgba(255,255,255,0.18); }
+
+.summary button.ghost,
+.modal button.ghost {
+  color: var(--muted);
+  background: #f4f5fa;
+  border-color: var(--line);
+}
+
+.summary button.ghost.is-on {
+  color: var(--brand);
+  background: #eef0ff;
+  border-color: #c7c9f5;
+}
+
+button.primary {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  border: none;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  cursor: pointer;
+}
+
+button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+button.small { padding: 6px 12px; font-size: 12.5px; }
+
+/* ---------- 教室卡片 ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.room {
+  position: relative;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid transparent;
+  animation: pop 0.18s ease-out;
+  cursor: pointer;
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.room:hover { border-color: #c7c9f5; transform: translateY(-2px); }
+.room.is-fav { border-color: #f5c76b; }
+
+.room-id {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  padding-right: 26px;
+}
+
+.room-meta {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.star {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  font-size: 15px;
+  color: #c7c9dd;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.star:hover { background: #fdf3dd; color: #d97706; }
+.room.is-fav .star { color: #f59e0b; }
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tag {
+  font-size: 11.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #4b5563;
+  background: #f3f4fa;
+}
+
+.tag.seats { color: var(--brand); background: #eef0ff; font-weight: 600; }
+
+.room-foot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  font-size: 12px;
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  padding: 36px 20px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.65);
+  background: rgba(255,255,255,0.06);
+  border: 1px dashed rgba(255,255,255,0.18);
+  border-radius: 14px;
+}
+
+/* ---------- AI ---------- */
+.ai-row { display: flex; gap: 10px; }
+
+.ai-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  outline: none;
+}
+
+.ai-row input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+
+.ai-out {
+  margin-top: 14px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  border-left: 3px solid var(--brand);
+  border-radius: 10px;
+  background: #f7f7fd;
+}
+
+.ai-out.error { border-left-color: #dc2626; background: #fef2f2; color: #991b1b; }
+
+/* ---------- 页脚 ---------- */
+.foot {
+  max-width: 900px;
+  margin: 16px auto 0;
+  font-size: 12px;
+  text-align: center;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ---------- 弹层 ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(10, 12, 28, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+/* 关键：.modal 的 display:grid 会盖掉 hidden 属性自带的 display:none */
+.modal[hidden] { display: none; }
+
+.modal-box {
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-box h3 { margin: 0 0 8px; font-size: 17px; }
+
+.field { display: block; margin-bottom: 14px; }
+.field span { display: block; margin-bottom: 6px; font-size: 13px; color: var(--muted); }
+
+.field input {
+  width: 100%;
+  padding: 11px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+}
+
+.field input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* ---------- 稳健性 ---------- */
+/* 长教室名不撑破卡片 */
+.room-id, .room-meta, .tag, .room-foot, .empty { overflow-wrap: anywhere; }
+
+/* 占位提示高度固定，切换时不跳 */
+.tip { min-height: 1.2em; }
+
+/* 关掉动效：晕动症友好，也方便低配设备 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- 手机 ---------- */
+@media (max-width: 600px) {
+  body { padding: 16px 12px 36px; }
+  .panel { padding: 15px; }
+  .brand .sub { display: none; }
+  .grid { grid-template-columns: 1fr 1fr; }
+  .room { padding: 12px 12px 10px; }
+  .room-id { font-size: 16px; }
+  .ai-row { flex-direction: column; }
+  .ai-row button { width: 100%; }
+}
+
+@media (max-width: 380px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">空</span>
+      <div>
+        <h1>空教室查询</h1>
+        <p class="sub" id="clockText">正在读取时间…</p>
+      </div>
+    </div>
+    <button id="settingsBtn" class="ghost" type="button">AI 设置</button>
+  </header>
+
+  <main>
+    <!-- 控制区：哪天、哪一节、哪栋楼 -->
+    <section class="panel">
+      <div class="panel-row">
+        <div class="seg" id="daySeg">
+          <button class="seg-btn is-on" data-day="0" type="button">今天</button>
+          <button class="seg-btn" data-day="1" type="button">明天</button>
+        </div>
+        <span class="tip" id="autoTip"></span>
+      </div>
+
+      <div class="periods" id="periodRow"></div>
+
+      <div class="panel-row wrap">
+        <div class="chips" id="buildingRow"></div>
+        <input
+          id="search"
+          class="search"
+          type="search"
+          placeholder="搜教室号，如 A305"
+          autocomplete="off"
+        />
+      </div>
+    </section>
+
+    <div class="summary">
+      <span id="summaryText">—</span>
+      <button id="favToggle" class="ghost small" type="button">☆ 只看收藏</button>
+    </div>
+
+    <section id="roomGrid" class="grid" aria-live="polite"></section>
+
+    <!-- AI 推荐 -->
+    <section class="panel">
+      <h2>让 AI 帮我挑一间</h2>
+      <p class="hint">说说你的偏好：安静、有插座、能坐 6 个人…</p>
+      <div class="ai-row">
+        <input id="need" type="text" placeholder="例如：安静、有插座、能坐 4 个人" maxlength="60" autocomplete="off" />
+        <button id="aiBtn" class="primary" type="button">推荐</button>
+      </div>
+      <div id="aiOut" class="ai-out" hidden></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    数据为模拟数据，用于演示；真实排课需要教务接口权限。
+  </footer>
+
+  <!-- AI 设置弹层 -->
+  <div id="settingsModal" class="modal" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <h3 id="settingsTitle">连接 AI 接口</h3>
+      <p class="hint">
+        默认填 DeepSeek 的兼容接口。Key 只存本机浏览器，<strong>不要写进代码、也不要发给别人</strong>。
+        留空则用「本地推荐」，不联网也能演示。
+      </p>
+
+      <label class="field">
+        <span>接口地址</span>
+        <input id="cfgEndpoint" type="text" placeholder="https://api.deepseek.com/chat/completions" />
+      </label>
+
+      <label class="field">
+        <span>模型名</span>
+        <input id="cfgModel" type="text" placeholder="deepseek-chat" />
+      </label>
+
+      <label class="field">
+        <span>API Key</span>
+        <input id="cfgKey" type="password" placeholder="sk-..." autocomplete="off" />
+      </label>
+
+      <div class="modal-actions">
+        <button id="settingsCancel" class="ghost" type="button">取消</button>
+        <button id="settingsSave" class="primary" type="button">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+/* ============================================================
+   空教室查询 — 数据与规则（core.js）
+   这一层不碰页面，只有数据和计算。好处：
+   1. 页面长什么样可以随便改，规则不受影响
+   2. 可以单独用 Node 测试（见 README）
+   ============================================================ */
+
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) {
+    module.exports = api;          // Node 里 require 用
+  } else {
+    root.Core = api;               // 浏览器里用 window.Core
+  }
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  "use strict";
+
+  /* ---------- 1. 节次（改这里能改作息） ---------- */
+  const PERIODS = [
+    { label: "第 1-2 节", start: "08:00", end: "09:40", weight: 62 },
+    { label: "第 3-4 节", start: "10:00", end: "11:40", weight: 56 },
+    { label: "第 5-6 节", start: "14:00", end: "15:40", weight: 48 },
+    { label: "第 7-8 节", start: "16:00", end: "17:40", weight: 40 },
+    { label: "第 9-10 节", start: "19:00", end: "20:40", weight: 26 },
+  ];
+
+  /* ---------- 2. 楼栋 ---------- */
+  const BUILDINGS = [
+    { id: "a", name: "教学楼 A", note: "离食堂近" },
+    { id: "b", name: "教学楼 B", note: "离宿舍近" },
+    { id: "lib", name: "图书馆", note: "最安静" },
+    { id: "lab", name: "实验楼", note: "插座多" },
+  ];
+
+  /* ---------- 3. 教室（换真实数据就改这一张表） ---------- */
+  const ROOMS = [
+    { id: "A101", b: "a", floor: 1, seats: 120, tags: ["空调", "投影"] },
+    { id: "A102", b: "a", floor: 1, seats: 60, tags: ["空调", "插座"] },
+    { id: "A103", b: "a", floor: 1, seats: 60, tags: ["空调"] },
+    { id: "A104", b: "a", floor: 1, seats: 40, tags: ["插座"] },
+    { id: "A201", b: "a", floor: 2, seats: 80, tags: ["空调", "投影", "插座"] },
+    { id: "A202", b: "a", floor: 2, seats: 60, tags: ["空调"] },
+    { id: "A203", b: "a", floor: 2, seats: 40, tags: ["插座"] },
+    { id: "A204", b: "a", floor: 2, seats: 40, tags: [] },
+    { id: "A301", b: "a", floor: 3, seats: 80, tags: ["空调", "插座"] },
+    { id: "A302", b: "a", floor: 3, seats: 60, tags: ["空调", "投影"] },
+    { id: "A303", b: "a", floor: 3, seats: 40, tags: [] },
+    { id: "A401", b: "a", floor: 4, seats: 60, tags: ["空调", "插座"] },
+    { id: "A402", b: "a", floor: 4, seats: 40, tags: ["插座"] },
+
+    { id: "B101", b: "b", floor: 1, seats: 100, tags: ["空调", "投影"] },
+    { id: "B102", b: "b", floor: 1, seats: 60, tags: ["空调"] },
+    { id: "B103", b: "b", floor: 1, seats: 40, tags: ["插座"] },
+    { id: "B201", b: "b", floor: 2, seats: 80, tags: ["空调", "插座"] },
+    { id: "B202", b: "b", floor: 2, seats: 60, tags: ["空调"] },
+    { id: "B203", b: "b", floor: 2, seats: 40, tags: [] },
+    { id: "B301", b: "b", floor: 3, seats: 60, tags: ["空调", "投影"] },
+    { id: "B302", b: "b", floor: 3, seats: 40, tags: ["插座"] },
+
+    { id: "图书馆 201", b: "lib", floor: 2, seats: 80, tags: ["安静", "空调", "插座"] },
+    { id: "图书馆 202", b: "lib", floor: 2, seats: 60, tags: ["安静", "空调"] },
+    { id: "图书馆 301", b: "lib", floor: 3, seats: 100, tags: ["安静", "空调", "插座"] },
+    { id: "图书馆 302", b: "lib", floor: 3, seats: 40, tags: ["安静"] },
+
+    { id: "实验楼 101", b: "lab", floor: 1, seats: 40, tags: ["插座", "投影"] },
+    { id: "实验楼 102", b: "lab", floor: 1, seats: 40, tags: ["插座"] },
+    { id: "实验楼 201", b: "lab", floor: 2, seats: 60, tags: ["插座", "空调"] },
+  ];
+
+  /* ---------- 4. 排课模拟 ----------
+     真实系统里这里应该读教务接口。现在用"确定性伪随机"：
+     同一间教室 + 同一天 + 同一节次，永远算出同一个结果，
+     所以刷新页面不会乱跳，看起来像真数据。 */
+
+  function hash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return Math.abs(h);
+  }
+
+  /** 某教室在某天某节是否被占用 */
+  function isOccupied(roomId, dayStamp, periodIndex) {
+    const weight = PERIODS[periodIndex].weight; // 早上课多、晚上课少
+    const h = hash(roomId + "|" + dayStamp + "|" + periodIndex);
+    return h % 100 < weight;
+  }
+
+  /** 从当前节次往后，连续空闲几节（最多数到当天最后一节） */
+  function consecutiveFree(roomId, dayStamp, periodIndex) {
+    let n = 0;
+    for (let p = periodIndex; p < PERIODS.length; p++) {
+      if (isOccupied(roomId, dayStamp, p)) break;
+      n++;
+    }
+    return n;
+  }
+
+  /** 当前时间落在第几节；不在任何节次内返回 -1 */
+  function periodAt(now) {
+    const mins = now.getHours() * 60 + now.getMinutes();
+    for (let i = 0; i < PERIODS.length; i++) {
+      const [sh, sm] = PERIODS[i].start.split(":").map(Number);
+      const [eh, em] = PERIODS[i].end.split(":").map(Number);
+      if (mins >= sh * 60 + sm && mins <= eh * 60 + em) return i;
+    }
+    return -1;
+  }
+
+  /**
+   * 打开页面时该默认显示哪个时段：
+   * 正在上课 → 当前节次
+   * 课间/太早 → 下一个还没开始的节次
+   * 都下课了 → 明天第一节
+   */
+  function defaultSlot(now) {
+    const p = periodAt(now);
+    if (p >= 0) return { dayOffset: 0, period: p, reason: "current" };
+
+    const mins = now.getHours() * 60 + now.getMinutes();
+    for (let i = 0; i < PERIODS.length; i++) {
+      const [sh, sm] = PERIODS[i].start.split(":").map(Number);
+      if (mins < sh * 60 + sm) return { dayOffset: 0, period: i, reason: "next" };
+    }
+    return { dayOffset: 1, period: 0, reason: "tomorrow" };
+  }
+
+  /* ---------- 5. 查询 ---------- */
+
+  /**
+   * 查出空闲教室
+   * @param {{dayStamp:number, period:number, building:string, query:string, favs:string[]}} opt
+   */
+  function freeRooms(opt) {
+    const q = (opt.query || "").trim().toLowerCase();
+    const favs = opt.favs || [];
+
+    return ROOMS.filter((room) => {
+      if (opt.building !== "all" && room.b !== opt.building) return false;
+      if (isOccupied(room.id, opt.dayStamp, opt.period)) return false;
+
+      if (q) {
+        const bName = buildingOf(room.b).name.toLowerCase();
+        const hit = room.id.toLowerCase().includes(q) || bName.includes(q);
+        if (!hit) return false;
+      }
+      return true;
+    })
+      .map((room) => ({
+        ...room,
+        buildingName: buildingOf(room.b).name,
+        fav: favs.includes(room.id),
+        free: consecutiveFree(room.id, opt.dayStamp, opt.period),
+      }))
+      .sort((x, y) => {
+        if (x.fav !== y.fav) return x.fav ? -1 : 1;      // 收藏的排前面
+        if (x.free !== y.free) return y.free - x.free;    // 能连空更久的排前面
+        return y.seats - x.seats;                         // 再按座位多
+      });
+  }
+
+  function buildingOf(id) {
+    return BUILDINGS.find((b) => b.id === id) || { id: id, name: id, note: "" };
+  }
+
+  /** 选中节次时的总览：共几间、空几间 */
+  function stats(dayStamp, period) {
+    const total = ROOMS.length;
+    const free = ROOMS.filter((r) => !isOccupied(r.id, dayStamp, period)).length;
+    return { total, free, busy: total - free };
+  }
+
+  /* ---------- 6. 没有 API 时的本地推荐 ----------
+     有 Key 时走真模型，没 Key 时用这套规则，保证断网也能演示。 */
+
+  function recommend(list, need) {
+    if (!list.length) return null;
+    const text = (need || "").toLowerCase();
+
+    const wantsQuiet = /安静|静|自习/.test(text);
+    const wantsPlug = /插座|充电|电脑/.test(text);
+    const wantsCool = /空调|凉|热/.test(text);
+    const seatMatch = text.match(/(\d+)\s*(人|个)/);
+    const needSeats = seatMatch ? Number(seatMatch[1]) : 0;
+
+    const scored = list.map((room) => {
+      let score = 0;
+      const tags = room.tags || [];
+      if (wantsQuiet && tags.includes("安静")) score += 3;
+      if (wantsPlug && tags.includes("插座")) score += 3;
+      if (wantsCool && tags.includes("空调")) score += 2;
+      if (needSeats && room.seats >= needSeats) score += 3;
+      if (needSeats && room.seats > needSeats * 3) score -= 1; // 太小猫用大屋子
+      score += Math.min(room.free, 4) * 0.5;                   // 能连空更久更加分
+      return { room, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score || b.room.seats - a.room.seats);
+    const best = scored[0].room;
+
+    const why = [];
+    if (wantsQuiet && best.tags.includes("安静")) why.push("在图书馆区域，安静");
+    if (wantsPlug && best.tags.includes("插座")) why.push("有插座");
+    if (needSeats) why.push(`能坐 ${best.seats} 人，够你说的 ${needSeats} 人`);
+    why.push(`接下来 ${best.free} 节都空`);
+
+    return { room: best, reason: why.join("，") };
+  }
+
+  return {
+    PERIODS,
+    BUILDINGS,
+    ROOMS,
+    isOccupied,
+    consecutiveFree,
+    periodAt,
+    defaultSlot,
+    freeRooms,
+    stats,
+    recommend,
+    buildingOf,
+  };
+});
+
+</script>
+  <script>
+/* ============================================================
+   空教室查询 — 界面逻辑
+   数据/规则都在 core.js 里，这里只负责"把结果画出来"和"响应点击"
+   ============================================================ */
+
+/* ---------- 1. 状态 ---------- */
+const FAV_KEY = "axiom_emptyroom_favs_v1";
+const CFG_KEY = "axiom_ai_cfg_v1";
+
+const state = {
+  dayOffset: 0,        // 0 = 今天，1 = 明天
+  period: 0,           // 第几节（0–4）
+  building: "all",     // all 或楼栋 id
+  query: "",           // 搜索词
+  onlyFav: false,      // 只看收藏
+  favs: loadFavs(),
+};
+
+let config = loadConfig();
+
+function loadFavs() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavs() {
+  localStorage.setItem(FAV_KEY, JSON.stringify(state.favs));
+}
+
+function loadConfig() {
+  const fallback = {
+    endpoint: "https://api.deepseek.com/chat/completions",
+    model: "deepseek-chat",
+    key: "",
+  };
+  try {
+    return { ...fallback, ...JSON.parse(localStorage.getItem(CFG_KEY) || "{}") };
+  } catch {
+    return fallback;
+  }
+}
+
+/** 把"今天+偏移"算成一个整数，用作模拟排课的种子 */
+function dayStamp() {
+  const d = new Date();
+  d.setDate(d.getDate() + state.dayOffset);
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+/* ---------- 2.5 地址栏状态 ----------
+   把"哪天/哪节/哪栋"写进 URL，好处：
+   1. 刷新页面不会跳回默认
+   2. 可以直接把某个视图发给别人，比如 #day=1&period=3&building=lib */
+
+function readHash() {
+  try {
+    const raw = location.hash.replace(/^#/, "");
+    if (!raw) return null;
+    const p = new URLSearchParams(raw);
+    const out = {};
+    if (p.has("day")) out.dayOffset = Number(p.get("day")) === 1 ? 1 : 0;
+    if (p.has("period")) {
+      const v = Number(p.get("period"));
+      if (Number.isInteger(v) && v >= 0 && v < Core.PERIODS.length) out.period = v;
+    }
+    if (p.has("building")) {
+      const b = p.get("building");
+      if (b === "all" || Core.BUILDINGS.some((x) => x.id === b)) out.building = b;
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+function syncHash() {
+  try {
+    const h = `#day=${state.dayOffset}&period=${state.period}&building=${state.building}`;
+    history.replaceState(null, "", h);
+  } catch {
+    /* file:// 下某些浏览器会拦 history，忽略即可 */
+  }
+}
+
+/* ---------- 2. 元素 ---------- */
+const $ = (id) => document.getElementById(id);
+
+const els = {
+  clock: $("clockText"),
+  daySeg: $("daySeg"),
+  autoTip: $("autoTip"),
+  periodRow: $("periodRow"),
+  buildingRow: $("buildingRow"),
+  search: $("search"),
+  summary: $("summaryText"),
+  favToggle: $("favToggle"),
+  grid: $("roomGrid"),
+  need: $("need"),
+  aiBtn: $("aiBtn"),
+  aiOut: $("aiOut"),
+  settingsBtn: $("settingsBtn"),
+  modal: $("settingsModal"),
+  cfgEndpoint: $("cfgEndpoint"),
+  cfgModel: $("cfgModel"),
+  cfgKey: $("cfgKey"),
+  settingsSave: $("settingsSave"),
+  settingsCancel: $("settingsCancel"),
+};
+
+/* ---------- 3. 渲染：控制区 ---------- */
+
+function renderPeriods() {
+  els.periodRow.innerHTML = "";
+  Core.PERIODS.forEach((p, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "period" + (i === state.period ? " is-on" : "");
+    btn.innerHTML = ""; // 清空
+    const b = document.createElement("b");
+    b.textContent = p.label;
+    const s = document.createElement("span");
+    s.textContent = p.start + "–" + p.end;
+    btn.append(b, s);
+    btn.addEventListener("click", () => {
+      state.period = i;
+      renderPeriods();
+      renderRooms();
+    });
+    els.periodRow.appendChild(btn);
+  });
+}
+
+function renderBuildings() {
+  els.buildingRow.innerHTML = "";
+  const all = [{ id: "all", name: "全部" }].concat(Core.BUILDINGS);
+  all.forEach((b) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip" + (state.building === b.id ? " is-on" : "");
+    btn.textContent = b.name;
+    btn.addEventListener("click", () => {
+      state.building = b.id;
+      renderBuildings();
+      renderRooms();
+    });
+    els.buildingRow.appendChild(btn);
+  });
+}
+
+function renderDaySeg() {
+  els.daySeg.querySelectorAll(".seg-btn").forEach((btn) => {
+    const day = Number(btn.dataset.day);
+    btn.classList.toggle("is-on", day === state.dayOffset);
+  });
+}
+
+/* ---------- 4. 渲染：教室卡片 ---------- */
+
+function renderRooms() {
+  const list = Core.freeRooms({
+    dayStamp: dayStamp(),
+    period: state.period,
+    building: state.building,
+    query: state.query,
+    favs: state.favs,
+  });
+
+  const shown = state.onlyFav ? list.filter((r) => r.fav) : list;
+
+  const st = Core.stats(dayStamp(), state.period);
+  els.summary.textContent =
+    `全校 ${st.total} 间 · 这一节空 ${st.free} 间` +
+    (shown.length !== st.free ? ` · 当前筛选出 ${shown.length} 间` : "");
+
+  els.grid.innerHTML = "";
+
+  if (shown.length === 0) {
+    const div = document.createElement("div");
+    div.className = "empty";
+    div.textContent = state.onlyFav
+      ? "还没有收藏的教室。点卡片右上角的 ☆ 收藏常去的教室，下次它会排在最前面。"
+      : "这个条件下没有空教室。换个节次或楼栋试试。";
+    els.grid.appendChild(div);
+    return;
+  }
+
+  shown.forEach((room) => {
+    const card = document.createElement("article");
+    card.className = "room" + (room.fav ? " is-fav" : "");
+
+    const id = document.createElement("div");
+    id.className = "room-id";
+    id.textContent = room.id;
+
+    const meta = document.createElement("div");
+    meta.className = "room-meta";
+    meta.textContent = `${room.buildingName} · ${room.floor} 层`;
+
+    const star = document.createElement("button");
+    star.type = "button";
+    star.className = "star";
+    star.title = room.fav ? "取消收藏" : "收藏";
+    star.textContent = room.fav ? "★" : "☆";
+    star.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleFav(room.id);
+    });
+
+    const tags = document.createElement("div");
+    tags.className = "tags";
+    const seat = document.createElement("span");
+    seat.className = "tag seats";
+    seat.textContent = room.seats + " 座";
+    tags.appendChild(seat);
+    room.tags.forEach((t) => {
+      const el = document.createElement("span");
+      el.className = "tag";
+      el.textContent = t;
+      tags.appendChild(el);
+    });
+
+    const foot = document.createElement("div");
+    foot.className = "room-foot";
+    foot.textContent = room.free > 1 ? `接下来 ${room.free} 节都空` : "只有这一节空";
+
+    card.append(star, id, meta, tags, foot);
+    els.grid.appendChild(card);
+  });
+
+  syncHash();
+  updateTip();
+}
+
+function toggleFav(id) {
+  if (state.favs.includes(id)) {
+    state.favs = state.favs.filter((x) => x !== id);
+  } else {
+    state.favs.push(id);
+  }
+  saveFavs();
+  renderRooms();
+}
+
+/* ---------- 5. 时钟与默认时段 ---------- */
+
+function updateClock() {
+  const now = new Date();
+  const week = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][now.getDay()];
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+
+  const p = Core.periodAt(now);
+  let phase;
+  if (p >= 0) {
+    phase = `正在上${Core.PERIODS[p].label}`;
+  } else {
+    const mins = now.getHours() * 60 + now.getMinutes();
+    const last = Core.PERIODS[Core.PERIODS.length - 1].end.split(":").map(Number);
+    phase = mins > last[0] * 60 + last[1] ? "今天已下课" : "课间";
+  }
+
+  els.clock.textContent = `${week} ${hh}:${mm} · ${phase}`;
+}
+
+/** 选中时段相对"现在"的状态提示，避免看着过期数据做决定 */
+function updateTip() {
+  let text = "";
+
+  if (state.dayOffset === 1) {
+    text = "明天的模拟课表";
+  } else {
+    const now = new Date();
+    const cur = Core.periodAt(now);
+    const mins = now.getHours() * 60 + now.getMinutes();
+    const firstStart = Core.PERIODS[0].start.split(":").map(Number);
+    const lastEnd = Core.PERIODS[Core.PERIODS.length - 1].end.split(":").map(Number);
+    const beforeFirst = mins < firstStart[0] * 60 + firstStart[1];
+    const afterLast = mins > lastEnd[0] * 60 + lastEnd[1];
+
+    if (cur === state.period) text = "正在上这节课";
+    else if (cur >= 0) text = state.period > cur ? "还没开始" : "今天已经结束";
+    else if (beforeFirst) text = "还没到上课时间";
+    else if (afterLast) text = "今天已下课";
+    else text = "课间";
+  }
+
+  els.autoTip.textContent = text;
+}
+
+/* ---------- 6. AI 推荐 ---------- */
+
+function currentFreeList() {
+  return Core.freeRooms({
+    dayStamp: dayStamp(),
+    period: state.period,
+    building: state.building,
+    query: state.query,
+    favs: state.favs,
+  });
+}
+
+function showAI(text, isError = false) {
+  els.aiOut.hidden = false;
+  els.aiOut.textContent = text;
+  els.aiOut.classList.toggle("error", isError);
+}
+
+async function askAI() {
+  const list = currentFreeList();
+
+  if (list.length === 0) {
+    showAI("当前条件下没有空教室，先换个节次或楼栋再试。");
+    return;
+  }
+
+  const need = els.need.value.trim();
+
+  // 没有 Key → 本地规则推荐（断网也能演示）
+  if (!config.key) {
+    const r = Core.recommend(list, need);
+    showAI(
+      `【本地推荐】没有配置 API Key，以下是按规则算出来的结果：\n\n` +
+        `${r.room.id}（${r.room.buildingName} ${r.room.floor} 层，${r.room.seats} 座）\n` +
+        `理由：${r.reason}。\n\n` +
+        `填上 API Key 后，这里会变成模型的推荐。`
+    );
+    return;
+  }
+
+  els.aiBtn.disabled = true;
+  els.aiBtn.textContent = "思考中…";
+  showAI("正在请求模型…");
+
+  // 只把前 12 间发给模型，省 token 也更快
+  const lines = list.slice(0, 12).map((r) => {
+    return `${r.id}|${r.buildingName}|${r.floor}层|${r.seats}座|${r.tags.join("、") || "无标签"}|连空${r.free}节`;
+  });
+
+  try {
+    const res = await fetch(config.endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.key}`,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        temperature: 0.3,
+        messages: [
+          {
+            role: "system",
+            content:
+              "你是校园自习助手。用户会给一份空教室列表（格式：教室|楼|楼层|座位|标签|连空节数）和自己的偏好。" +
+              "你只能从列表里挑一间，输出两行：第一行只写教室编号；第二行用不超过 60 字说明为什么适合，不要用列表符号。",
+          },
+          {
+            role: "user",
+            content: `偏好：${need || "没有特别偏好，挑一间最合适的"}\n空教室：\n${lines.join("\n")}`,
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) throw new Error(`接口返回 ${res.status}（Key 无效、余额不足或地址写错）`);
+
+    const data = await res.json();
+    const answer = data?.choices?.[0]?.message?.content?.trim();
+    showAI(answer || "模型没有返回内容，换个说法再试。");
+  } catch (err) {
+    showAI("调用失败：" + err.message + "\n\n已自动切回本地推荐：\n" + formatLocal(list, need), true);
+  } finally {
+    els.aiBtn.disabled = false;
+    els.aiBtn.textContent = "推荐";
+  }
+}
+
+function formatLocal(list, need) {
+  const r = Core.recommend(list, need);
+  return `${r.room.id}（${r.room.buildingName} ${r.room.floor} 层，${r.room.seats} 座）— ${r.reason}。`;
+}
+
+/* ---------- 7. 事件绑定 ---------- */
+
+els.daySeg.addEventListener("click", (e) => {
+  const btn = e.target.closest(".seg-btn");
+  if (!btn) return;
+  state.dayOffset = Number(btn.dataset.day);
+  renderDaySeg();
+  renderRooms();
+});
+
+els.search.addEventListener("input", () => {
+  state.query = els.search.value;
+  renderRooms();
+});
+
+els.favToggle.addEventListener("click", () => {
+  state.onlyFav = !state.onlyFav;
+  els.favToggle.classList.toggle("is-on", state.onlyFav);
+  els.favToggle.textContent = (state.onlyFav ? "★" : "☆") + " 只看收藏";
+  renderRooms();
+});
+
+els.aiBtn.addEventListener("click", askAI);
+
+els.need.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") askAI();
+});
+
+/* 设置面板 */
+els.settingsBtn.addEventListener("click", () => {
+  els.cfgEndpoint.value = config.endpoint;
+  els.cfgModel.value = config.model;
+  els.cfgKey.value = config.key;
+  els.modal.hidden = false;
+  els.cfgKey.focus();
+});
+
+els.settingsCancel.addEventListener("click", () => { els.modal.hidden = true; });
+
+els.settingsSave.addEventListener("click", () => {
+  config = {
+    endpoint: els.cfgEndpoint.value.trim() || "https://api.deepseek.com/chat/completions",
+    model: els.cfgModel.value.trim() || "deepseek-chat",
+    key: els.cfgKey.value.trim(),
+  };
+  localStorage.setItem(CFG_KEY, JSON.stringify(config));
+  els.modal.hidden = true;
+  showAI(config.key ? "已保存。点「推荐」试试真实模型。" : "已清空 Key，当前使用本地推荐。");
+});
+
+els.modal.addEventListener("click", (e) => {
+  if (e.target === els.modal) els.modal.hidden = true;
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !els.modal.hidden) els.modal.hidden = true;
+});
+
+/* ---------- 8. 启动 ---------- */
+(function init() {
+  const fromHash = readHash();
+  const slot = Core.defaultSlot(new Date());
+
+  state.dayOffset = fromHash && fromHash.dayOffset != null ? fromHash.dayOffset : slot.dayOffset;
+  state.period = fromHash && fromHash.period != null ? fromHash.period : slot.period;
+  state.building = (fromHash && fromHash.building) || "all";
+
+  renderDaySeg();
+  renderPeriods();
+  renderBuildings();
+  renderRooms();
+  updateClock();
+  setInterval(updateClock, 30000);
+})();
+
+</script>
+</body>
+</html>

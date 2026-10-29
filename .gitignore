@@ -1,0 +1,23 @@
+# 系统垃圾
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器
+.vscode/
+.idea/
+
+# 依赖（这个项目不需要，但防止以后误提交）
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+
+# 密钥：绝对不能提交
+.env
+.env.local
+*.key
+
+# 临时文件
+*.log
+*.tmp
+backup-*/

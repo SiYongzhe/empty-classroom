@@ -1,0 +1,446 @@
+/* ============================================
+   空教室查询 — 样式
+   改配色只需要改 :root 里的几个变量
+   ============================================ */
+:root {
+  --bg: #0f1226;
+  --card: #ffffff;
+  --ink: #14172b;
+  --muted: #6b7280;
+  --line: #e5e7ef;
+  --brand: #4f46e5;
+  --brand-2: #7c3aed;
+  --ok: #15803d;
+  --ok-soft: #ecfdf3;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(15, 18, 38, 0.12);
+  --font: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  font-family: var(--font);
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #2b2f6b 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, #4c1d95 0%, transparent 55%),
+    var(--bg);
+  padding: 24px 16px 48px;
+}
+
+/* ---------- 顶栏 ---------- */
+.topbar {
+  max-width: 900px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #fff;
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+
+.logo {
+  width: 42px; height: 42px;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  font-weight: 800; font-size: 19px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.45);
+}
+
+.brand h1 { margin: 0; font-size: 19px; letter-spacing: 0.2px; }
+.brand .sub { margin: 2px 0 0; font-size: 12px; color: rgba(255,255,255,0.66); }
+
+/* ---------- 通用 ---------- */
+main { max-width: 900px; margin: 0 auto; display: grid; gap: 14px; }
+
+.panel {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.panel h2 { margin: 0 0 6px; font-size: 16px; }
+
+.hint { margin: 0 0 14px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-row.wrap { flex-wrap: wrap; justify-content: flex-start; }
+
+.tip { font-size: 12px; color: var(--muted); }
+
+/* ---------- 今天 / 明天 ---------- */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 11px;
+  background: #f3f4fa;
+  border: 1px solid var(--line);
+}
+
+.seg-btn {
+  padding: 7px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.seg-btn.is-on {
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.3);
+}
+
+/* ---------- 节次 ---------- */
+.periods {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.periods::-webkit-scrollbar { display: none; }
+
+.period {
+  flex: none;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.period b { display: block; font-size: 13px; }
+.period span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.period:hover { border-color: #c7c9dd; }
+
+.period.is-on {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+}
+
+.period.is-on span { color: rgba(255,255,255,0.8); }
+
+/* ---------- 楼栋筛选 ---------- */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.chip {
+  padding: 7px 13px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.chip:hover { border-color: #c7c9dd; }
+
+.chip.is-on {
+  color: var(--brand);
+  background: #eef0ff;
+  border-color: #c7c9f5;
+  font-weight: 600;
+}
+
+.search {
+  flex: 1;
+  min-width: 160px;
+  padding: 9px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  outline: none;
+}
+
+.search:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+
+/* ---------- 统计条 ---------- */
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+}
+
+button.ghost {
+  padding: 7px 13px;
+  font-size: 13px;
+  font-family: inherit;
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+button.ghost:hover { background: rgba(255,255,255,0.18); }
+
+.summary button.ghost,
+.modal button.ghost {
+  color: var(--muted);
+  background: #f4f5fa;
+  border-color: var(--line);
+}
+
+.summary button.ghost.is-on {
+  color: var(--brand);
+  background: #eef0ff;
+  border-color: #c7c9f5;
+}
+
+button.primary {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  border: none;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  cursor: pointer;
+}
+
+button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+button.small { padding: 6px 12px; font-size: 12.5px; }
+
+/* ---------- 教室卡片 ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.room {
+  position: relative;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid transparent;
+  animation: pop 0.18s ease-out;
+  cursor: pointer;
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.room:hover { border-color: #c7c9f5; transform: translateY(-2px); }
+.room.is-fav { border-color: #f5c76b; }
+
+.room-id {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  padding-right: 26px;
+}
+
+.room-meta {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.star {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  font-size: 15px;
+  color: #c7c9dd;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.star:hover { background: #fdf3dd; color: #d97706; }
+.room.is-fav .star { color: #f59e0b; }
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tag {
+  font-size: 11.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #4b5563;
+  background: #f3f4fa;
+}
+
+.tag.seats { color: var(--brand); background: #eef0ff; font-weight: 600; }
+
+.room-foot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  font-size: 12px;
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  padding: 36px 20px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.65);
+  background: rgba(255,255,255,0.06);
+  border: 1px dashed rgba(255,255,255,0.18);
+  border-radius: 14px;
+}
+
+/* ---------- AI ---------- */
+.ai-row { display: flex; gap: 10px; }
+
+.ai-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  outline: none;
+}
+
+.ai-row input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+
+.ai-out {
+  margin-top: 14px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  border-left: 3px solid var(--brand);
+  border-radius: 10px;
+  background: #f7f7fd;
+}
+
+.ai-out.error { border-left-color: #dc2626; background: #fef2f2; color: #991b1b; }
+
+/* ---------- 页脚 ---------- */
+.foot {
+  max-width: 900px;
+  margin: 16px auto 0;
+  font-size: 12px;
+  text-align: center;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ---------- 弹层 ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(10, 12, 28, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+/* 关键：.modal 的 display:grid 会盖掉 hidden 属性自带的 display:none */
+.modal[hidden] { display: none; }
+
+.modal-box {
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-box h3 { margin: 0 0 8px; font-size: 17px; }
+
+.field { display: block; margin-bottom: 14px; }
+.field span { display: block; margin-bottom: 6px; font-size: 13px; color: var(--muted); }
+
+.field input {
+  width: 100%;
+  padding: 11px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+}
+
+.field input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* ---------- 稳健性 ---------- */
+/* 长教室名不撑破卡片 */
+.room-id, .room-meta, .tag, .room-foot, .empty { overflow-wrap: anywhere; }
+
+/* 占位提示高度固定，切换时不跳 */
+.tip { min-height: 1.2em; }
+
+/* 关掉动效：晕动症友好，也方便低配设备 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- 手机 ---------- */
+@media (max-width: 600px) {
+  body { padding: 16px 12px 36px; }
+  .panel { padding: 15px; }
+  .brand .sub { display: none; }
+  .grid { grid-template-columns: 1fr 1fr; }
+  .room { padding: 12px 12px 10px; }
+  .room-id { font-size: 16px; }
+  .ai-row { flex-direction: column; }
+  .ai-row button { width: 100%; }
+}
+
+@media (max-width: 380px) {
+  .grid { grid-template-columns: 1fr; }
+}
