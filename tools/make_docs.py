@@ -254,6 +254,9 @@ def fix_tables(src, dst):
 
 
 def to_pdf(docx_path, pdf_path):
+    # 先删旧文件，否则转换失败时会把上一次的旧产物当成成功
+    if os.path.exists(pdf_path):
+        os.remove(pdf_path)
     res = subprocess.run(
         [NODE, CLI, "convert", "--input", docx_path, "--output", pdf_path],
         capture_output=True,

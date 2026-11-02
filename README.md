@@ -3,7 +3,8 @@
 北信科的同学想自习，却不知道哪间教室现在空着，只能一层层走。
 这个网页做一件事：**选出时间和楼栋，直接告诉你哪几间空、能连空几节。**
 
-> 演示地址：部署后把链接填在这里（见「部署上线 · 不用 GitHub」）
+> 演示地址：<https://snazzy-sprite-379ec1.netlify.app>
+> （线上跑的是单文件版；改了代码运行 `python build_single.py` 再 `python tools/build_deploy.py` 重新打包）
 
 ## 现在能做什么
 
