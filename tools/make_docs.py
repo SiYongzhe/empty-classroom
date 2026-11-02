@@ -37,6 +37,7 @@ MD_JOBS = [
     ("部署指南-不用GitHub.md", "5-部署指南"),
     (os.path.join("参赛包", "README-提交模板.md"), "6-提交用README模板"),
     ("演示提示卡.md", "7-演示提示卡"),
+    (os.path.join("参赛包", "提交用README.md"), "8-提交用README"),
 ]
 
 DOCX_JOBS = [
