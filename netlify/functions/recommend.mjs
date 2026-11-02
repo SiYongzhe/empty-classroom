@@ -23,6 +23,56 @@ export default async (request) => {
   if (request.method === "OPTIONS") {
     return new Response("", { status: 204, headers: CORS });
   }
+
+  // ---------- 诊断用：只在 GET 下开放，不消耗 token ----------
+  if (request.method === "GET") {
+    let url;
+    try {
+      url = new URL(request.url);
+    } catch {
+      return json({ error: "只支持 POST" }, 405);
+    }
+
+    // /api/recommend?health=1  看环境变量有没有被读到
+    if (url.searchParams.get("health") === "1") {
+      const k = process.env.DEEPSEEK_API_KEY || "";
+      return json({
+        hasKey: k.length > 0,
+        keyLength: k.length,
+        hasWhitespace: k !== k.trim() || /\s/.test(k),
+        startsWithSk: k.startsWith("sk-"),
+        model: process.env.MODEL || "deepseek-chat",
+        node: process.version,
+      });
+    }
+
+    // /api/recommend?test=1  真的打一次上游，验证 Key 是否可用
+    if (url.searchParams.get("test") === "1") {
+      const k = process.env.DEEPSEEK_API_KEY || "";
+      if (!k) return json({ ok: false, stage: "env", error: "没有 DEEPSEEK_API_KEY" }, 200);
+      try {
+        const res = await fetch(
+          process.env.UPSTREAM_URL || "https://api.deepseek.com/chat/completions",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${k}` },
+            body: JSON.stringify({
+              model: process.env.MODEL || "deepseek-chat",
+              max_tokens: 10,
+              messages: [{ role: "user", content: "说两个字：收到" }],
+            }),
+          }
+        );
+        const text = await res.text();
+        return json({ ok: res.ok, status: res.status, body: text.slice(0, 300) }, 200);
+      } catch (err) {
+        return json({ ok: false, stage: "fetch", error: String(err?.message || err) }, 200);
+      }
+    }
+
+    return json({ error: "只支持 POST" }, 405);
+  }
+
   if (request.method !== "POST") {
     return json({ error: "只支持 POST" }, 405);
   }

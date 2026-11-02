@@ -128,6 +128,25 @@ node tests/test_core.cjs
 
 **不要把 API Key 写进代码。** 这个项目让用户在页面上自己填 Key，存在浏览器本地，代码里是干净的。
 
+## 架构：AI 密钥不在前端
+
+```
+浏览器  →  POST /api/recommend  →  Netlify Function  →  DeepSeek
+        （无 Key）                （读环境变量）          （带 Key）
+```
+
+- 前端代码、仓库、浏览器里都**没有 Key**
+- Key 只存在 Netlify 的 `DEEPSEEK_API_KEY` 环境变量里，标为 secret，连控制台都不显示明文
+- 函数只接受 POST、限制入参长度、只允许从空教室列表里挑
+- 服务端挂掉时前端自动降级到本地规则，页面不会崩
+
+诊断接口（上线后可自己验证）：
+
+| 地址 | 看什么 |
+| --- | --- |
+| `/api/recommend?health=1` | `keyLength` 应为 35 左右 |
+| `/api/recommend?test=1` | 应返回 `ok: true` |
+
 ## 已知限制
 
 - 教室编号取自真实课表（WLA-310、XXB-605 这些），**占用状态仍是模拟的**，没有接教务系统
