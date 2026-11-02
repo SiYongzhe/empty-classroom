@@ -24,47 +24,63 @@
     { label: "第 9-10 节", start: "19:00", end: "20:40", weight: 26 },
   ];
 
-  /* ---------- 2. 楼栋 ---------- */
+  /* ---------- 2. 楼栋（真实编号，来自大数据 2631 班课表） ---------- */
   const BUILDINGS = [
-    { id: "a", name: "教学楼 A", note: "离食堂近" },
-    { id: "b", name: "教学楼 B", note: "离宿舍近" },
-    { id: "lib", name: "图书馆", note: "最安静" },
-    { id: "lab", name: "实验楼", note: "插座多" },
+    { id: "wla", name: "WLA", note: "文理楼" },
+    { id: "wlb", name: "WLB", note: "文理楼" },
+    { id: "wlc", name: "WLC", note: "语音教室所在楼" },
+    { id: "xxb", name: "XXB", note: "信息楼" },
+    { id: "xxd", name: "XXD", note: "信息楼" },
+    { id: "gxb", name: "GXB", note: "工训楼" },
+    { id: "lib", name: "图书馆", note: "自习区，不排课" },
   ];
 
-  /* ---------- 3. 教室（换真实数据就改这一张表） ---------- */
+  /* ---------- 3. 教室 ----------
+     编号规则：楼栋-房间号，房间号首位 = 楼层（WLA-310 在三层）
+     带「语音室」标签的是语言实验室，WLC 的 (语) 就是这类教室。 */
+
   const ROOMS = [
-    { id: "A101", b: "a", floor: 1, seats: 120, tags: ["空调", "投影"] },
-    { id: "A102", b: "a", floor: 1, seats: 60, tags: ["空调", "插座"] },
-    { id: "A103", b: "a", floor: 1, seats: 60, tags: ["空调"] },
-    { id: "A104", b: "a", floor: 1, seats: 40, tags: ["插座"] },
-    { id: "A201", b: "a", floor: 2, seats: 80, tags: ["空调", "投影", "插座"] },
-    { id: "A202", b: "a", floor: 2, seats: 60, tags: ["空调"] },
-    { id: "A203", b: "a", floor: 2, seats: 40, tags: ["插座"] },
-    { id: "A204", b: "a", floor: 2, seats: 40, tags: [] },
-    { id: "A301", b: "a", floor: 3, seats: 80, tags: ["空调", "插座"] },
-    { id: "A302", b: "a", floor: 3, seats: 60, tags: ["空调", "投影"] },
-    { id: "A303", b: "a", floor: 3, seats: 40, tags: [] },
-    { id: "A401", b: "a", floor: 4, seats: 60, tags: ["空调", "插座"] },
-    { id: "A402", b: "a", floor: 4, seats: 40, tags: ["插座"] },
+    // WLA
+    { id: "WLA-201", b: "wla", floor: 2, seats: 60, tags: ["空调"] },
+    { id: "WLA-213", b: "wla", floor: 2, seats: 60, tags: ["空调", "投影"] },
+    { id: "WLA-310", b: "wla", floor: 3, seats: 120, tags: ["空调", "投影", "插座"] },
+    { id: "WLA-406", b: "wla", floor: 4, seats: 80, tags: ["空调", "插座"] },
+    { id: "WLA-508", b: "wla", floor: 5, seats: 40, tags: ["插座"] },
+    { id: "WLA-513", b: "wla", floor: 5, seats: 60, tags: ["空调"] },
 
-    { id: "B101", b: "b", floor: 1, seats: 100, tags: ["空调", "投影"] },
-    { id: "B102", b: "b", floor: 1, seats: 60, tags: ["空调"] },
-    { id: "B103", b: "b", floor: 1, seats: 40, tags: ["插座"] },
-    { id: "B201", b: "b", floor: 2, seats: 80, tags: ["空调", "插座"] },
-    { id: "B202", b: "b", floor: 2, seats: 60, tags: ["空调"] },
-    { id: "B203", b: "b", floor: 2, seats: 40, tags: [] },
-    { id: "B301", b: "b", floor: 3, seats: 60, tags: ["空调", "投影"] },
-    { id: "B302", b: "b", floor: 3, seats: 40, tags: ["插座"] },
+    // WLB
+    { id: "WLB-201", b: "wlb", floor: 2, seats: 60, tags: ["空调"] },
+    { id: "WLB-302", b: "wlb", floor: 3, seats: 80, tags: ["空调", "投影"] },
+    { id: "WLB-405", b: "wlb", floor: 4, seats: 40, tags: ["插座"] },
 
-    { id: "图书馆 201", b: "lib", floor: 2, seats: 80, tags: ["安静", "空调", "插座"] },
-    { id: "图书馆 202", b: "lib", floor: 2, seats: 60, tags: ["安静", "空调"] },
-    { id: "图书馆 301", b: "lib", floor: 3, seats: 100, tags: ["安静", "空调", "插座"] },
-    { id: "图书馆 302", b: "lib", floor: 3, seats: 40, tags: ["安静"] },
+    // WLC（语音教室多）
+    { id: "WLC-106", b: "wlc", floor: 1, seats: 40, tags: ["语音室", "空调"] },
+    { id: "WLC-209", b: "wlc", floor: 2, seats: 40, tags: ["语音室", "插座"] },
+    { id: "WLC-213", b: "wlc", floor: 2, seats: 40, tags: ["语音室", "空调"] },
+    { id: "WLC-310", b: "wlc", floor: 3, seats: 60, tags: ["空调"] },
 
-    { id: "实验楼 101", b: "lab", floor: 1, seats: 40, tags: ["插座", "投影"] },
-    { id: "实验楼 102", b: "lab", floor: 1, seats: 40, tags: ["插座"] },
-    { id: "实验楼 201", b: "lab", floor: 2, seats: 60, tags: ["插座", "空调"] },
+    // XXB
+    { id: "XXB-108", b: "xxb", floor: 1, seats: 60, tags: ["空调"] },
+    { id: "XXB-205", b: "xxb", floor: 2, seats: 120, tags: ["空调", "投影"] },
+    { id: "XXB-302", b: "xxb", floor: 3, seats: 60, tags: ["插座"] },
+    { id: "XXB-605", b: "xxb", floor: 6, seats: 80, tags: ["空调", "插座"] },
+    { id: "XXB-607", b: "xxb", floor: 6, seats: 60, tags: ["空调"] },
+
+    // XXD
+    { id: "XXD-104", b: "xxd", floor: 1, seats: 100, tags: ["空调", "投影"] },
+    { id: "XXD-205", b: "xxd", floor: 2, seats: 60, tags: ["空调"] },
+    { id: "XXD-301", b: "xxd", floor: 3, seats: 40, tags: ["插座"] },
+
+    // GXB
+    { id: "GXB-204", b: "gxb", floor: 2, seats: 60, tags: ["插座"] },
+    { id: "GXB-305", b: "gxb", floor: 3, seats: 40, tags: [] },
+    { id: "GXB-410", b: "gxb", floor: 4, seats: 80, tags: ["空调", "投影", "插座"] },
+
+    // 图书馆（自习区，不排课）
+    { id: "图书馆-201", b: "lib", floor: 2, seats: 80, tags: ["安静", "空调", "插座"] },
+    { id: "图书馆-202", b: "lib", floor: 2, seats: 60, tags: ["安静", "空调"] },
+    { id: "图书馆-301", b: "lib", floor: 3, seats: 100, tags: ["安静", "空调", "插座"] },
+    { id: "图书馆-302", b: "lib", floor: 3, seats: 40, tags: ["安静"] },
   ];
 
   /* ---------- 4. 排课模拟 ----------

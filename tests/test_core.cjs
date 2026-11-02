@@ -1,4 +1,4 @@
-/* 逻辑测试：在 axiom-starter 目录运行  node tests/test_core.cjs
+﻿/* 逻辑测试：在 axiom-starter 目录运行  node tests/test_core.cjs
    只测 core.js，不需要浏览器。改完数据和规则先跑这个，再打开页面看。 */
 const fs = require("fs");
 const path = require("path");
@@ -26,7 +26,7 @@ ok(Core.ROOMS.every((r) => r.seats > 0), "座位数都大于 0");
 ok(Core.PERIODS.length === 5, "五个节次");
 
 console.log("[2] 排课是确定性的（刷新不乱跳）");
-ok(Core.isOccupied("A201", stamp, 2) === Core.isOccupied("A201", stamp, 2), "同教室同天同节结果一致");
+ok(Core.isOccupied("WLA-310", stamp, 2) === Core.isOccupied("WLA-310", stamp, 2), "同教室同天同节结果一致");
 const changed = Core.ROOMS.filter(
   (r) => Core.isOccupied(r.id, stamp, 1) !== Core.isOccupied(r.id, day2, 1)
 ).length;
@@ -45,10 +45,11 @@ ok(ratios[4] > ratios[0], "晚上比早上空（符合直觉）");
 console.log("[4] 查询过滤");
 const all = Core.freeRooms({ dayStamp: stamp, period: 2, building: "all", query: "", favs: [] });
 ok(all.length > 0, "全部楼栋有空教室（" + all.length + " 间）");
-const lib = Core.freeRooms({ dayStamp: stamp, period: 2, building: "lib", query: "", favs: [] });
-ok(lib.every((r) => r.b === "lib"), "按楼栋筛选生效");
-const q = Core.freeRooms({ dayStamp: stamp, period: 2, building: "all", query: "a3", favs: [] });
-ok(q.every((r) => r.id.toLowerCase().includes("a3")), "按教室号搜索生效");
+const one = Core.freeRooms({ dayStamp: stamp, period: 2, building: "wla", query: "", favs: [] });
+ok(one.every((r) => r.b === "wla"), "按楼栋筛选生效");
+const sampleId = all[0].id;
+const q = Core.freeRooms({ dayStamp: stamp, period: 2, building: "all", query: sampleId, favs: [] });
+ok(q.length === 1 && q[0].id === sampleId, "按教室号精确搜索生效");
 
 console.log("[5] 收藏置顶");
 const firstId = all[0].id;
@@ -79,10 +80,10 @@ ok(r2 && r2.room.seats >= 100, "要 100 人时挑到 " + (r2 && r2.room.seats) +
 ok(Core.recommend([], "随便") === null, "没有空教室时返回 null");
 
 console.log("[9] 全天时间轴");
-const sched = Core.daySchedule("A201", stamp);
+const sched = Core.daySchedule("WLA-310", stamp);
 ok(sched.length === Core.PERIODS.length, "一天有 " + sched.length + " 格");
 ok(sched.every((v) => typeof v === "boolean"), "每格都是布尔值");
-const manual = Core.PERIODS.map((_, i) => !Core.isOccupied("A201", stamp, i));
+const manual = Core.PERIODS.map((_, i) => !Core.isOccupied("WLA-310", stamp, i));
 ok(JSON.stringify(sched) === JSON.stringify(manual), "与 isOccupied 的结论一致");
 const mixed = Core.ROOMS.filter((r) => {
   const s = Core.daySchedule(r.id, stamp);
