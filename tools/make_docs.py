@@ -16,6 +16,7 @@ import sys
 from docx import Document
 from docx.shared import Pt, Cm, RGBColor
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
@@ -153,6 +154,19 @@ def md_to_docx(md_path, dst):
                     p.paragraph_format.space_after = Pt(2)
                     _runs(p, val, 9.3)
             doc.add_paragraph().paragraph_format.space_after = Pt(1)
+            continue
+
+        # 图片：![说明](相对路径)
+        mi = re.match(r"^!\[([^\]]*)\]\(([^)]+)\)$", s)
+        if mi:
+            img = os.path.join(os.path.dirname(md_path), mi.group(2))
+            if os.path.exists(img):
+                try:
+                    doc.add_picture(img, width=Cm(15))
+                    doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                except Exception as exc:  # 图片坏了不该让整份文档失败
+                    print(f"  [warn] 图片插入失败 {img}: {exc}")
+            i += 1
             continue
 
         m = re.match(r"^(#{1,6})\s+(.*)$", s)
