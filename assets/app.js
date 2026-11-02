@@ -395,6 +395,26 @@ function showAI(text, isError = false) {
   els.aiOut.classList.toggle("error", isError);
 }
 
+/* 服务端代理地址：Key 存在服务器环境变量里，浏览器永远拿不到。
+   留空字符串 = 不启用（退回"用户自己填 Key"或本地规则）。 */
+const PROXY_URL = "/api/recommend";
+
+const SYSTEM_PROMPT =
+  "你是校园自习助手。用户会给一份空教室列表（格式：教室|楼|楼层|座位|标签|连空节数）和自己的偏好。" +
+  "你只能从列表里挑一间，输出两行：第一行只写教室编号；第二行用不超过 60 字说明为什么适合，不要用列表符号。";
+
+function setBusy(busy) {
+  els.aiBtn.disabled = busy;
+  els.aiBtn.textContent = busy ? "思考中…" : "推荐";
+}
+
+/** 把当前空教室压成紧凑文本，省 token 也更快 */
+function roomLines(list) {
+  return list.slice(0, 12).map(
+    (r) => `${r.id}|${r.buildingName}|${r.floor}层|${r.seats}座|${r.tags.join("、") || "无标签"}|连空${r.free}节`
+  );
+}
+
 async function askAI() {
   const list = currentFreeList();
 
@@ -404,64 +424,77 @@ async function askAI() {
   }
 
   const need = els.need.value.trim();
+  const lines = roomLines(list);
 
-  // 没有 Key → 本地规则推荐（断网也能演示）
-  if (!config.key) {
-    const r = Core.recommend(list, need);
-    showAI(
-      `【本地推荐】没有配置 API Key，以下是按规则算出来的结果：\n\n` +
-        `${r.room.id}（${r.room.buildingName} ${r.room.floor} 层，${r.room.seats} 座）\n` +
-        `理由：${r.reason}。\n\n` +
-        `填上 API Key 后，这里会变成模型的推荐。`
-    );
-    return;
-  }
-
-  els.aiBtn.disabled = true;
-  els.aiBtn.textContent = "思考中…";
+  setBusy(true);
   showAI("正在请求模型…");
 
-  // 只把前 12 间发给模型，省 token 也更快
-  const lines = list.slice(0, 12).map((r) => {
-    return `${r.id}|${r.buildingName}|${r.floor}层|${r.seats}座|${r.tags.join("、") || "无标签"}|连空${r.free}节`;
+  try {
+    // ① 优先走服务端代理：Key 在服务器，浏览器里什么都没有
+    if (PROXY_URL) {
+      try {
+        const res = await fetch(PROXY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ need, rooms: lines }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.text) {
+          showAI(data.text);
+          return;
+        }
+        console.warn("服务端代理不可用：", res.status, data.error || "");
+      } catch (e) {
+        console.warn("服务端代理请求失败：", e.message);
+      }
+    }
+
+    // ② 本机自己填了 Key（只在本地调试时用）
+    if (config.key) {
+      showAI(await askWithOwnKey(need, lines));
+      return;
+    }
+
+    // ③ 都没配 → 本地规则，断网也能演示
+    const r = Core.recommend(list, need);
+    showAI(
+      `【本地推荐】服务端还没配置模型，以下是按规则算出来的结果：\n\n` +
+        `${r.room.id}（${r.room.buildingName} ${r.room.floor} 层，${r.room.seats} 座）\n` +
+        `理由：${r.reason}。\n\n` +
+        `服务端配好 Key 之后，这里会直接变成模型的推荐，参观者不用做任何设置。`
+    );
+  } catch (err) {
+    showAI("调用失败：" + err.message + "\n\n已切回本地推荐：\n" + formatLocal(list, need), true);
+  } finally {
+    setBusy(false);
+  }
+}
+
+/** 用户自己在设置里填了 Key 时的直连方式（仅本地调试） */
+async function askWithOwnKey(need, lines) {
+  const res = await fetch(config.endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.key}`,
+    },
+    body: JSON.stringify({
+      model: config.model,
+      temperature: 0.3,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: `偏好：${need || "没有特别偏好，挑一间最合适的"}\n空教室：\n${lines.join("\n")}`,
+        },
+      ],
+    }),
   });
 
-  try {
-    const res = await fetch(config.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.key}`,
-      },
-      body: JSON.stringify({
-        model: config.model,
-        temperature: 0.3,
-        messages: [
-          {
-            role: "system",
-            content:
-              "你是校园自习助手。用户会给一份空教室列表（格式：教室|楼|楼层|座位|标签|连空节数）和自己的偏好。" +
-              "你只能从列表里挑一间，输出两行：第一行只写教室编号；第二行用不超过 60 字说明为什么适合，不要用列表符号。",
-          },
-          {
-            role: "user",
-            content: `偏好：${need || "没有特别偏好，挑一间最合适的"}\n空教室：\n${lines.join("\n")}`,
-          },
-        ],
-      }),
-    });
+  if (!res.ok) throw new Error(`接口返回 ${res.status}（Key 无效、余额不足或地址写错）`);
 
-    if (!res.ok) throw new Error(`接口返回 ${res.status}（Key 无效、余额不足或地址写错）`);
-
-    const data = await res.json();
-    const answer = data?.choices?.[0]?.message?.content?.trim();
-    showAI(answer || "模型没有返回内容，换个说法再试。");
-  } catch (err) {
-    showAI("调用失败：" + err.message + "\n\n已自动切回本地推荐：\n" + formatLocal(list, need), true);
-  } finally {
-    els.aiBtn.disabled = false;
-    els.aiBtn.textContent = "推荐";
-  }
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content?.trim() || "模型没有返回内容，换个说法再试。";
 }
 
 function formatLocal(list, need) {

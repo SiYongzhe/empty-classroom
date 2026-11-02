@@ -1,0 +1,23 @@
+# Netlify 部署配置
+# 站点是纯静态（一个 index.html），函数只用来藏 API Key
+
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# 前端调 /api/recommend，转到函数
+[[redirects]]
+  from = "/api/recommend"
+  to = "/.netlify/functions/recommend"
+  status = 200
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"

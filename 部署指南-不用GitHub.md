@@ -99,3 +99,39 @@
 
 - **代码里不能有 API Key**。这个项目是让用户在页面上自己填 Key、存浏览器本地的，仓库是干净的——答辩被问「Key 怎么管的」可以直接答这句。
 - 部署完之后，`README.md` 里那句「部署后填在这里」要改成真链接，别留着占位符提交。
+
+---
+
+## 让 AI 不用填 Key：服务端代理（Netlify Functions）
+
+前端代码里**没有任何 Key**。调用链是：
+
+```
+浏览器  →  POST /api/recommend  →  Netlify Function  →  DeepSeek
+           （无 Key）              （读环境变量）        （带 Key）
+```
+
+### 部署步骤
+
+1. 拖 `build/deploy` **整个文件夹**（不是 zip）到 Netlify 的 Deploys 页面。
+   里面有 `index.html`、`netlify.toml`、`netlify/functions/recommend.mjs`。
+2. Netlify → `Site configuration` → `Environment variables` → `Add a variable`：
+   - Key：`DEEPSEEK_API_KEY`
+   - Value：你的 key（`sk-` 开头）
+3. 加完点 **Deploys → Trigger deploy → Deploy site**，让函数读到新变量。
+4. 打开站点点「推荐」：正常会直接出模型结果，不再提示「本地推荐」。
+
+### 为什么这样安全
+
+| 做法 | 安全性 |
+| --- | --- |
+| Key 写在前端 JS 里 | 最差，任何人 F12 就能拿走 |
+| Key 存在用户浏览器 | 一般，只保护了「你没泄露自己的 key」，但每个访客都得自己填 |
+| **Key 在服务端环境变量** | **最好，浏览器只能看到 `/api/recommend`，拿不到 Key** |
+
+函数里还做了三件事：只接受 POST、限制入参长度、只允许从列表里挑（不把原始输入直接转给模型）。
+
+### 如果不想开服务端
+
+把 `assets/app.js` 里的 `PROXY_URL` 改成空字符串（`""`），前端就退回「本地规则推荐」：
+断网、不配 Key 也能演示，只是 AI 那一栏变成规则话术。

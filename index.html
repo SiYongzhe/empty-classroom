@@ -96,10 +96,10 @@
   <!-- AI 设置弹层 -->
   <div id="settingsModal" class="modal" hidden>
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <h3 id="settingsTitle">连接 AI 接口</h3>
+      <h3 id="settingsTitle">AI 设置（平时不用动）</h3>
       <p class="hint">
-        默认填 DeepSeek 的兼容接口。Key 只存本机浏览器，<strong>不要写进代码、也不要发给别人</strong>。
-        留空则用「本地推荐」，不联网也能演示。
+        站点已经接了<strong>服务端代理</strong>：Key 存在服务器上，浏览器里没有，评委打开就能用，不需要在这里填任何东西。
+        下面这个输入框只给「本地调试、没有服务端」的情况用，填了也只存在你自己的浏览器里。
       </p>
 
       <label class="field">
@@ -113,7 +113,7 @@
       </label>
 
       <label class="field">
-        <span>API Key</span>
+        <span>自己的 API Key（选填）</span>
         <input id="cfgKey" type="password" placeholder="sk-..." autocomplete="off" />
       </label>
 
