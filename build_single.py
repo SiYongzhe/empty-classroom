@@ -21,6 +21,7 @@ html = read("index.html")
 css = read("assets/style.css")
 core = read("assets/core.js")
 app = read("assets/app.js")
+rooms = read("assets/rooms-real.js")
 
 # 1. 样式内联
 html, n1 = re.subn(
@@ -29,7 +30,13 @@ html, n1 = re.subn(
     html,
 )
 
-# 2. 脚本内联（顺序不能乱：core 先于 app）
+# 2. 脚本内联（顺序不能乱：rooms-real → core → app）
+html, n_rooms = re.subn(
+    r'<script\s+src="assets/rooms-real\.js"></script>',
+    lambda m: "<script>\n" + rooms + "\n</script>",
+    html,
+)
+
 html, n2 = re.subn(
     r'<script\s+src="assets/core\.js"></script>',
     lambda m: "<script>\n" + core + "\n</script>",
@@ -42,8 +49,8 @@ html, n3 = re.subn(
     html,
 )
 
-if n1 != 1 or n2 != 1 or n3 != 1:
-    raise SystemExit(f"替换数量不对：css={n1} core={n2} app={n3}，检查 index.html 里的引用是否被改过")
+if n1 != 1 or n_rooms != 1 or n2 != 1 or n3 != 1:
+    raise SystemExit(f"替换数量不对：css={n1} rooms={n_rooms} core={n2} app={n3}，检查 index.html 里的引用是否被改过")
 
 # 3. 顶部加一行说明，方便以后知道这文件是生成的
 html = html.replace(

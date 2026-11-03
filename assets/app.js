@@ -185,6 +185,11 @@ function renderRooms() {
 
   const shown = state.onlyFav ? list.filter((r) => r.fav) : list;
 
+  // 380 间教室一次画完会卡，只画前 48 张，其余靠筛选缩小范围
+  const MAX_CARDS = 48;
+  const visible = shown.slice(0, MAX_CARDS);
+  const hiddenCount = shown.length - visible.length;
+
   const st = Core.stats(dayStamp(), state.period);
   els.summary.textContent =
     `全校 ${st.total} 间 · 这一节空 ${st.free} 间` +
@@ -202,7 +207,7 @@ function renderRooms() {
     return;
   }
 
-  shown.forEach((room) => {
+  visible.forEach((room) => {
     const card = document.createElement("article");
     card.className = "room" + (room.fav ? " is-fav" : "");
 
@@ -256,6 +261,13 @@ function renderRooms() {
     card.append(star, id, meta, tags, foot);
     els.grid.appendChild(card);
   });
+
+  if (hiddenCount > 0) {
+    const more = document.createElement("div");
+    more.className = "empty";
+    more.textContent = `还有 ${hiddenCount} 间没显示。选个楼栋或搜教室号，能看得更准。`;
+    els.grid.appendChild(more);
+  }
 
   syncHash();
   updateTip();

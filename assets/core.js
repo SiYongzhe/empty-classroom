@@ -25,7 +25,7 @@
   ];
 
   /* ---------- 2. 楼栋（真实编号，来自大数据 2631 班课表） ---------- */
-  const BUILDINGS = [
+  let BUILDINGS = [
     { id: "wla", name: "WLA", note: "文理楼" },
     { id: "wlb", name: "WLB", note: "文理楼" },
     { id: "wlc", name: "WLC", note: "语音教室所在楼" },
@@ -39,7 +39,7 @@
      编号规则：楼栋-房间号，房间号首位 = 楼层（WLA-310 在三层）
      带「语音室」标签的是语言实验室，WLC 的 (语) 就是这类教室。 */
 
-  const ROOMS = [
+  let ROOMS = [
     // WLA
     { id: "WLA-201", b: "wla", floor: 2, seats: 60, tags: ["空调"] },
     { id: "WLA-213", b: "wla", floor: 2, seats: 60, tags: ["空调", "投影"] },
@@ -83,6 +83,20 @@
     { id: "图书馆-302", b: "lib", floor: 3, seats: 40, tags: ["安静"] },
   ];
 
+  /* ---------- 3.5 有真实数据就覆盖（沙河校区 380 间） ----------
+     window.REAL_ROOMS 由教务处导出的教室列表生成，见 tools/import_rooms.py。
+     hasClass === false 表示这间教室本周完全没有排课——这是导出时就确定的真实状态。 */
+  const REAL = (typeof window !== "undefined" && window.REAL_ROOMS) || null;
+  const ALWAYS_FREE = new Set();
+
+  if (REAL && Array.isArray(REAL.rooms) && REAL.rooms.length) {
+    BUILDINGS = REAL.buildings;
+    ROOMS = REAL.rooms;
+    REAL.rooms.forEach((r) => {
+      if (r.hasClass === false) ALWAYS_FREE.add(r.id);
+    });
+  }
+
   /* ---------- 4. 排课模拟 ----------
      真实系统里这里应该读教务接口。现在用"确定性伪随机"：
      同一间教室 + 同一天 + 同一节次，永远算出同一个结果，
@@ -99,6 +113,9 @@
 
   /** 某教室在某天某节是否被占用 */
   function isOccupied(roomId, dayStamp, periodIndex) {
+    // 本周完全没排课的教室，任何时段都空——真实数据，不是模拟
+    if (ALWAYS_FREE.has(roomId)) return false;
+
     const weight = PERIODS[periodIndex].weight; // 早上课多、晚上课少
     const h = hash(roomId + "|" + dayStamp + "|" + periodIndex);
     return h % 100 < weight;
