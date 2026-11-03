@@ -13,6 +13,7 @@ const state = {
   building: "all",     // all 或楼栋 id
   query: "",           // 搜索词
   onlyFav: false,      // 只看收藏
+  open24Only: false,   // 只看 24 小时开放
   favs: loadFavs(),
   detailId: null,      // 当前打开的教室详情
 };
@@ -163,6 +164,18 @@ function renderBuildings() {
     });
     els.buildingRow.appendChild(btn);
   });
+
+  // 24 小时开放筛选
+  const n24 = document.createElement("button");
+  n24.type = "button";
+  n24.className = "chip chip-24" + (state.open24Only ? " is-on" : "");
+  n24.textContent = "24 小时开放";
+  n24.addEventListener("click", () => {
+    state.open24Only = !state.open24Only;
+    renderBuildings();
+    renderRooms();
+  });
+  els.buildingRow.appendChild(n24);
 }
 
 function renderDaySeg() {
@@ -179,6 +192,7 @@ function renderRooms() {
     dayStamp: dayStamp(),
     period: state.period,
     building: state.building,
+    open24Only: state.open24Only,
     query: state.query,
     favs: state.favs,
   });
@@ -235,6 +249,12 @@ function renderRooms() {
     seat.className = "tag seats";
     seat.textContent = room.seats + " 座";
     tags.appendChild(seat);
+    if (room.open24) {
+      const t24 = document.createElement("span");
+      t24.className = "tag open24";
+      t24.textContent = "24h 开放";
+      tags.appendChild(t24);
+    }
     room.tags.forEach((t) => {
       const el = document.createElement("span");
       el.className = "tag";
@@ -396,6 +416,7 @@ function currentFreeList() {
     dayStamp: dayStamp(),
     period: state.period,
     building: state.building,
+    open24Only: state.open24Only,
     query: state.query,
     favs: state.favs,
   });

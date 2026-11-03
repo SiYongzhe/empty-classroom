@@ -74,5 +74,14 @@ const list = Core.freeRooms({ dayStamp: stamp, period: 0, building: "all", query
 ok(list.length === st.free, "列表数与统计一致");
 ok(list.every((r) => r.buildingName), "每张卡片都有楼栋名");
 
+console.log("[24 小时开放]");
+const n24 = Core.ROOMS.filter((r) => r.open24).length;
+ok(n24 === 27, "24h 开放教室 = " + n24 + " 间");
+const only24 = Core.freeRooms({ dayStamp: stamp, period: 0, building: "all", query: "", favs: [], open24Only: true });
+ok(only24.length > 0 && only24.every((r) => r.open24), "open24Only 筛选生效，共 " + only24.length + " 间");
+const allList = Core.freeRooms({ dayStamp: stamp, period: 0, building: "all", query: "", favs: [] });
+ok(allList[0].open24 === true, "24h 教室排在列表最前（" + allList[0].id + "）");
+
 console.log(fail === 0 ? "\n全部通过" : "\n有 " + fail + " 项失败");
 process.exit(fail === 0 ? 0 : 1);
+

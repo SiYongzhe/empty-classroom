@@ -177,6 +177,7 @@
 
     return ROOMS.filter((room) => {
       if (opt.building !== "all" && room.b !== opt.building) return false;
+      if (opt.open24Only && !room.open24) return false;
       if (isOccupied(room.id, opt.dayStamp, opt.period)) return false;
 
       if (q) {
@@ -193,9 +194,10 @@
         free: consecutiveFree(room.id, opt.dayStamp, opt.period),
       }))
       .sort((x, y) => {
-        if (x.fav !== y.fav) return x.fav ? -1 : 1;      // 收藏的排前面
-        if (x.free !== y.free) return y.free - x.free;    // 能连空更久的排前面
-        return y.seats - x.seats;                         // 再按座位多
+        if (x.fav !== y.fav) return x.fav ? -1 : 1;         // 收藏的排前面
+        if (x.open24 !== y.open24) return x.open24 ? -1 : 1; // 24 小时开放的往前
+        if (x.free !== y.free) return y.free - x.free;       // 能连空更久的往前
+        return y.seats - x.seats;                            // 再按座位多
       });
   }
 

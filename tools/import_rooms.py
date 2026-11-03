@@ -22,6 +22,7 @@ from collections import Counter
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "assets", "rooms-real.js")
 
+OPEN24_FILE = os.path.join(ROOT, "data", "24h-rooms.txt")
 DROP_BUILDING = {"校外"}
 DROP_TYPE = {"操场", "公用资源"}
 
@@ -70,6 +71,14 @@ def main():
             "hasClass": (r["是否存在排课"] or "").strip() == "是",
         })
 
+    # 24 小时开放名单（来源：学校「教室夜间开放情况」）
+    open24 = set()
+    if os.path.exists(OPEN24_FILE):
+        for line in io.open(OPEN24_FILE, encoding="utf-8"):
+            line = line.strip()
+            if line and not line.startswith("#"):
+                open24.add(line)
+
     cnt = Counter(x["bld"] for x in rooms)
     buildings = [
         {"id": "b%d" % i, "name": name, "count": n}
@@ -85,6 +94,7 @@ def main():
             "seats": x["seats"],
             "tags": [x["type"]],
             "hasClass": x["hasClass"],
+            "open24": x["id"] in open24,
         }
         for x in rooms
     ]
@@ -103,7 +113,8 @@ def main():
     io.open(OUT, "w", encoding="utf-8").write(js)
 
     free = sum(1 for x in out_rooms if not x["hasClass"])
-    print(f"校区：{campus}　教室：{len(out_rooms)}　本周无课：{free}　楼栋：{len(buildings)}")
+    n24 = sum(1 for x in out_rooms if x["open24"])
+    print(f"校区：{campus}　教室：{len(out_rooms)}　本周无课：{free}　24h开放：{n24}　楼栋：{len(buildings)}")
     for b in buildings:
         print(f"  {b['id']:<4} {b['name']:<12} {b['count']}")
     print("输出：", OUT, round(len(js) / 1024, 1), "KB")
